@@ -22,12 +22,30 @@ Your personal AI assistant for MBA coursework. Upload your course materials and 
 
 ### Step 1: Get API Keys (5 minutes)
 
-**OpenAI API Key:**
+**OpenAI Configuration:**
+
+You have two options for accessing OpenAI:
+
+#### Option A: Use Columbia Business School's OpenAI Access (Recommended for students)
+
+If your instructor has provided access to Columbia's OpenAI endpoint:
+
+1. You'll receive an API key from your instructor
+2. You'll use:
+   - **API Key:** The key provided by your instructor
+   - **Base URL:** `https://cbsai.business.columbia.edu/api/v1`
+3. Skip to Step 2 (you don't need to create your own OpenAI account)
+
+#### Option B: Use Your Own OpenAI Account
 
 1. Go to <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>
 2. Sign in or create account
 3. Click "Create new secret key"
 4. Copy the key (starts with `sk-`)
+5. You'll use:
+   - **API Key:** Your OpenAI key
+   - **Base URL:** `https://api.openai.com/v1`
+6. Note: You'll be charged based on usage (~$1-5/semester)
 
 **Pinecone API Key:**
 
@@ -112,7 +130,8 @@ Pick a memorable password for accessing your copilot. You'll share this with any
    |----------|-------|-----------------|
    | `AUTH_SECRET` | Output from `openssl rand -base64 32` | Step 4 - random secret |
    | `AUTH_PASSWORD` | `your-password-here` | Step 5 - your chosen password |
-   | `OPENAI_API_KEY` | `sk-...` | From Step 1 - starts with `sk-` |
+   | `OPENAI_API_KEY` | `sk-...` or instructor-provided key | From Step 1 |
+   | `OPENAI_BASE_URL` | `https://api.openai.com/v1` OR `https://cbsai.business.columbia.edu/api/v1` | From Step 1 - depends on option chosen |
    | `PINECONE_API_KEY` | `pc-...` | From Step 1 - your Pinecone API key |
    | `PINECONE_INDEX` | `mba-copilot` | Must match the index name from Step 3 |
 
@@ -427,9 +446,9 @@ The `next.config.js` file proxies `/api/*` requests to the Python backend during
 |----------|----------|-------------|
 | `AUTH_SECRET` | Yes | Random secret for NextAuth (generate with `openssl rand -base64 32`) |
 | `AUTH_PASSWORD` | Yes | Password for accessing the app |
-| `OPENAI_API_KEY` | Yes | Your OpenAI API key |
+| `OPENAI_API_KEY` | Yes | Your OpenAI API key (from OpenAI or instructor) |
+| `OPENAI_BASE_URL` | Yes | OpenAI endpoint: `https://api.openai.com/v1` or `https://cbsai.business.columbia.edu/api/v1` |
 | `PINECONE_API_KEY` | Yes | Your Pinecone API key |
-| `OPENAI_BASE_URL` | No | Custom OpenAI endpoint (for school access) |
 | `PINECONE_INDEX` | No | Index name (default: `mba-copilot`) |
 
 ### Useful Commands

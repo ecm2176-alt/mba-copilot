@@ -50,7 +50,7 @@ class Config:
 
     # OpenAI
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-    OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")  # Optional
+    OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
     EMBEDDING_MODEL = "text-embedding-3-large"
     CHAT_MODEL = "gpt-4o-mini"
     EMBEDDING_DIMENSIONS = 1024
@@ -85,13 +85,10 @@ def get_openai() -> OpenAI:
 
         from openai import OpenAI
 
-        if config.OPENAI_BASE_URL:
-            _openai_client = OpenAI(
-                api_key=config.OPENAI_API_KEY,
-                base_url=config.OPENAI_BASE_URL,
-            )
-        else:
-            _openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
+        _openai_client = OpenAI(
+            api_key=config.OPENAI_API_KEY,
+            base_url=config.OPENAI_BASE_URL,
+        )
 
     return _openai_client
 
