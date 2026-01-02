@@ -695,6 +695,18 @@ async def upload(
         filename: Optional full path (including folder structure) for the file
     """
     try:
+        # Check environment variables
+        if not config.OPENAI_API_KEY:
+            raise HTTPException(
+                status_code=500,
+                detail="OPENAI_API_KEY not configured. Please set environment variables in Vercel dashboard."
+            )
+        if not config.PINECONE_API_KEY:
+            raise HTTPException(
+                status_code=500,
+                detail="PINECONE_API_KEY not configured. Please set environment variables in Vercel dashboard."
+            )
+
         # Use provided filename (with folder structure) or fall back to file.filename
         display_filename = filename or file.filename or "unknown"
 
@@ -741,7 +753,9 @@ async def upload(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        import traceback
+        error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=error_detail) from e
 
 
 @app.get("/documents")

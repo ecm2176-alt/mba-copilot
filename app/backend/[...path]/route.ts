@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes max
 export const dynamic = 'force-dynamic';
+// Disable body size limit for this route
+export const bodyParser = false;
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
@@ -41,6 +43,8 @@ export async function POST(
     // Forward the request body as-is (supports large files)
     const body = await request.arrayBuffer();
 
+    console.log(`[Proxy] POST /backend/${path} - Body size: ${body.byteLength} bytes`);
+
     const response = await fetch(`${BACKEND_URL}/backend/${path}`, {
       method: 'POST',
       headers: {
@@ -50,11 +54,18 @@ export async function POST(
       body,
     });
 
+    console.log(`[Proxy] Response status: ${response.status}`);
+
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Proxy error:', error);
-    return NextResponse.json({ error: 'Proxy error' }, { status: 500 });
+    console.error('[Proxy] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({
+      error: 'Proxy error',
+      detail: errorMessage,
+      path: `/backend/${path}`
+    }, { status: 500 });
   }
 }
 
