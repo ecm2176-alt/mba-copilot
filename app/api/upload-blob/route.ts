@@ -11,6 +11,11 @@ export const maxDuration = 300;
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as HandleUploadBody;
 
+  // Capture the host from the request for use in onUploadCompleted
+  const host = request.headers.get('host');
+  const protocol = request.headers.get('x-forwarded-proto') || 'https';
+  const requestUrl = host ? `${protocol}://${host}` : null;
+
   try {
     const jsonResponse = await handleUpload({
       body,
@@ -41,13 +46,15 @@ export async function POST(request: NextRequest) {
         try {
           const { originalFilename } = JSON.parse(tokenPayload || '{}');
 
-          // In production, use the Vercel deployment URL; in dev, use localhost
-          const backendUrl = process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}`
-            : 'http://localhost:3000';
+          // Determine backend URL: use request URL if available, fallback to VERCEL_URL, then localhost
+          const backendUrl = requestUrl ||
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
           console.log('[Blob] Processing file:', originalFilename);
           console.log('[Blob] Backend URL:', backendUrl);
+          console.log('[Blob] Blob URL:', blob.url);
+          console.log('[Blob] Request URL:', requestUrl);
+          console.log('[Blob] VERCEL_URL env:', process.env.VERCEL_URL);
 
           // Build headers - include bypass token if available for deployment protection
           const headers: Record<string, string> = {
@@ -59,19 +66,29 @@ export async function POST(request: NextRequest) {
             headers['x-vercel-protection-bypass'] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
           }
 
-          const response = await fetch(`${backendUrl}/backend/upload-from-url`, {
+          const fetchUrl = `${backendUrl}/backend/upload-from-url`;
+          console.log('[Blob] Calling backend at:', fetchUrl);
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minute timeout
+
+          const response = await fetch(fetchUrl, {
             method: 'POST',
             headers,
             body: JSON.stringify({
               url: blob.url,
               filename: originalFilename || blob.pathname,
             }),
-          });
+            signal: controller.signal,
+          }).finally(() => clearTimeout(timeoutId));
+
+          console.log('[Blob] Backend response status:', response.status);
 
           if (!response.ok) {
             const errorText = await response.text();
             console.error('[Blob] Backend processing failed:', response.status, errorText);
-            throw new Error(`Backend processing failed: ${response.status}`);
+            console.error('[Blob] Request details:', { url: blob.url, filename: originalFilename || blob.pathname });
+            throw new Error(`Backend processing failed: ${response.status} - ${errorText}`);
           }
 
           const result = await response.json();
@@ -83,6 +100,11 @@ export async function POST(request: NextRequest) {
           console.log('[Blob] Deleted temporary blob:', blob.url);
         } catch (error) {
           console.error('[Blob] Error processing upload:', error);
+          if (error instanceof Error) {
+            console.error('[Blob] Error name:', error.name);
+            console.error('[Blob] Error message:', error.message);
+            console.error('[Blob] Error stack:', error.stack);
+          }
           // Note: We can't notify the client directly from here since this is async
           // The error will appear in Vercel logs
         }
