@@ -7,7 +7,7 @@
     {
       "src": "serverless/backend/index.py",
       "use": "@vercel/python",
-      "config": { "maxDuration": 60 }
+      "config": { "maxDuration": 300 }
     }
   ],
   "routes": [
@@ -15,5 +15,10 @@
       "src": "/backend/(.*)",
       "dest": "/serverless/backend/index.py"
     }
-  ]
+  ],
+  "functions": {
+    "serverless/backend/index.py": {
+      "maxDuration": 300
+    }
+  }
 }
